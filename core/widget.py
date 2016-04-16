@@ -1,6 +1,6 @@
 import pygame
 
-class Window:
+class Window(object):
 
     def __init__(self, width, height, title='', background_image_path=''):
         pygame.init()
@@ -38,15 +38,15 @@ class Window:
         for i in range(len(grid)):
             for j in range(len(grid[0])):
                 loc = (anchor[0]+i*block[0], anchor[1]+j*block[1])[::-1]
-                self.window.blit(img[0], loc)
-                if grid[i][j] != 0: self.window.blit(img[grid[i][j]], loc)
+                self.window.blit(img[-1], loc)
+                if grid[i][j] != -1: self.window.blit(img[grid[i][j]], loc)
 
     def draw_img(self, anchor=(0,0), pos=(0,0), img=None):
         loc = (anchor[0]+pos[0], anchor[1]+pos[1])[::-1]
         if img: self.window.blit(img, loc)
 
 
-class Keyboard:
+class Keyboard(object):
 
     RANGE = 400
 

@@ -1,6 +1,5 @@
 from core import Window, Keyboard, Board
 
-
 window = Window(1200, 800, 'Welcome to Reversi AI', 'resources/images/background_100x100.png')
 keyboard = Keyboard()
 board = Board(window, 1, 'resources/images/board_82x82_b1.png', \
