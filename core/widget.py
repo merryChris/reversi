@@ -34,16 +34,16 @@ class Window(object):
         self.done_background = True
 
     """ Should be included in a loop. """
-    def draw_grid(self, anchor=(0,0), block=(0,0), grid=[[]], img=()):
+    def draw_suface(self, anchor=(0,0), pos=(0,0), suface=None):
+        loc = (anchor[0]+pos[0], anchor[1]+pos[1])[::-1]
+        if suface: self.window.blit(suface, loc)
+
+    def draw_grid(self, anchor=(0,0), block=(0,0), grid=[[]], suface=()):
         for i in range(len(grid)):
             for j in range(len(grid[0])):
                 loc = (anchor[0]+i*block[0], anchor[1]+j*block[1])[::-1]
-                self.window.blit(img[-1], loc)
-                if grid[i][j] != -1: self.window.blit(img[grid[i][j]], loc)
-
-    def draw_img(self, anchor=(0,0), pos=(0,0), img=None):
-        loc = (anchor[0]+pos[0], anchor[1]+pos[1])[::-1]
-        if img: self.window.blit(img, loc)
+                self.window.blit(suface[-1], loc)
+                if grid[i][j] != -1: self.window.blit(suface[grid[i][j]], loc)
 
 
 class Keyboard(object):
