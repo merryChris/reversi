@@ -1,3 +1,5 @@
+import random
+
 __all__ = ('Reversi')
 
 class Rule(object):
@@ -14,15 +16,18 @@ class Rule(object):
     def _reset_feasible_locations(self, board):
         self.feasible_locations = set()
 
+    def has_feasible_location(self):
+        return True if self.feasible_locations else False
+
     def is_valid(self, loc=()):
         if not self.feasible_locations or not loc: return False
 
         return loc in self.feasible_locations
 
-    def shift(self, board=[], loc=()):
-        if not board or not loc: return
+    def get_current_player(self):
+        return self.current_player
 
-        board[loc[0]][loc[1]] = self.current_player
+    def shift(self, board=[], loc=()):
         self._flip(board, loc)
         self._reset_feasible_locations(board)
 
@@ -32,15 +37,16 @@ class Reversi(Rule):
     MOVE = ((-1,-1),(-1,0),(-1,1),(0,1),(1,1),(1,0),(1,-1),(0,-1))
 
     def _flip(self, board, loc):
-        board[loc[0]][loc[1]] = self.current_player
-        for d in Reversi.MOVE:
-            if self._is_feasible(board, loc, d):
-                tx, ty = loc[0]+d[0], loc[1]+d[1]
-                while 0<=tx<len(board) and 0<=ty<len(board[0]):
-                    if board[tx][ty] == self.current_player: break
-                    board[tx][ty] ^= 1
-                    tx += d[0]
-                    ty += d[1]
+        if loc:
+            board[loc[0]][loc[1]] = self.current_player
+            for d in Reversi.MOVE:
+                if self._is_feasible(board, loc, d):
+                    tx, ty = loc[0]+d[0], loc[1]+d[1]
+                    while 0<=tx<len(board) and 0<=ty<len(board[0]):
+                        if board[tx][ty] == self.current_player: break
+                        board[tx][ty] ^= 1
+                        tx += d[0]
+                        ty += d[1]
 
         super(Reversi, self)._flip(board, loc)
 
@@ -66,3 +72,6 @@ class Reversi(Rule):
             ty += d[1]
 
         return 0<=tx<len(board) and 0<=ty<len(board[0]) and board[tx][ty] == self.current_player and cnt>0
+
+    def select(self):
+        return random.choice(list(self.feasible_locations))
