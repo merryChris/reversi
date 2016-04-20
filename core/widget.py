@@ -59,7 +59,7 @@ class Keyboard(object):
         # ASCII VALUE RANGE
         self.keys = [False] * Keyboard.RANGE
 
-    def monitor(self, onkeydown_callback=None, always_callback=None):
+    def monitor(self, onkeydown_callback=None):
         event = pygame.event.poll()
         if event.type == pygame.QUIT: return False
 
@@ -69,10 +69,4 @@ class Keyboard(object):
             if onkeydown_callback: onkeydown_callback(self.keys)
             self.keys[event.key] = False
 
-        always_callback()
         return True
-
-class Timer(object):
-
-    def sleep(self, second=2):
-        time.sleep(second)

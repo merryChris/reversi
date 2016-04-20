@@ -1,6 +1,5 @@
 import pygame
 
-from widget import Timer
 from rule import Reversi
 
 __all__ = ('Board', 'ScoreBoard')
@@ -19,8 +18,11 @@ class Board(object):
         self.width = width
         self.pieces = ()
 
-        if pieces_path:
-            self.pieces = tuple([pygame.image.load(pp) for pp in pieces_path if pp])
+        self.locked  = False
+        self.placed  = False
+        self.pressed = False
+
+        if pieces_path: self.pieces = tuple([pygame.image.load(pp) for pp in pieces_path if pp])
         if cursor_piece_path: self.cp = pygame.image.load(cursor_piece_path)
 
         # Boader overlapping.
@@ -32,20 +34,50 @@ class Board(object):
         self.cursor = (3, 3)
 
         self.rule = Reversi(self.player_number, self.state)
-        self.timer = Timer()
-        self.done_board = False
+
+    def is_locked(self):
+        return self.locked
+
+    def reset_lock(self):
+        self.locked = False
 
     def get_player_status_text(self):
+        formated_status_text = ['{who}\'s Turn', 'Flipping After {who}\'s Turn', '{who} Cannot Move']
         who = self.player_title[self.rule.get_current_player()]
-        action = ' Turn'
-        if not self.rule.has_feasible_location():
-            action = ' Cannot Move'
 
-        return who + action
+        which = 0
+        if self.placed: which = 1
+        if not self.rule.has_feasible_location(): which = 2
 
-    def check(self):
+        return formated_status_text[which].format(who=who)
+
+    def action(self, callbacks=()):
+        # Cannot Move Case
         if not self.rule.has_feasible_location():
-            self.rule.shift(self.state)
+            self.rule.shift()
+            self.locked = True
+        # Flip itself Case
+        elif self.placed:
+            self.rule.shift(self.state, self.cursor)
+            self.locked = True
+            self.placed = False
+            self.window.reset_background()
+        # Need AI Case
+        elif self.rule.get_current_player() not in self.entity_player_list:
+            self.cursor = self.rule.select()
+            self.state[self.cursor[0]][self.cursor[1]] = self.rule.get_current_player()
+            self.flutter_update()
+            self.locked  = True
+            self.placed  = True
+        # Get Feasible Location Case
+        elif self.pressed and self.rule.validate_loc(self.cursor):
+            self.state[self.cursor[0]][self.cursor[1]] = self.rule.get_current_player()
+            self.flutter_update()
+            self.locked  = True
+            self.placed  = True
+            self.pressed = False
+
+        for cb in callbacks: cb()
 
     def count(self):
         cnt = [0]*self.player_number
@@ -57,8 +89,6 @@ class Board(object):
         return cnt
 
     def update(self, keys):
-        if self.need_ai(): return
-
         d = 0
         if keys[pygame.K_UP]: d = 1
         if keys[pygame.K_RIGHT]: d = 2
@@ -67,37 +97,18 @@ class Board(object):
         nxt_cursor = tuple([self.cursor[0]+Board.MOVE[d][0], self.cursor[1]+Board.MOVE[d][1]])
         if 0 <= nxt_cursor[0] < self.height and 0 <= nxt_cursor[1] < self.width:
             self.cursor = nxt_cursor
+            self.flutter_update()
         if d != 0: return
 
         if keys[pygame.K_KP_ENTER] or keys[pygame.K_RETURN]:
-            if self.rule.is_valid(self.cursor):
-              self.state[self.cursor[0]][self.cursor[1]] = self.rule.get_current_player()
-              self.force_update()
-              self.rule.shift(self.state, self.cursor)
-              self.window.reset_background()
+            self.pressed = True
 
-    def need_ai(self):
-        return self.rule.get_current_player() not in self.entity_player_list
-
-    def action_itself(self):
-        self.cursor = self.rule.select()
-        self.state[self.cursor[0]][self.cursor[1]] = self.rule.get_current_player()
-        self.force_update()
-        self.rule.shift(self.state, self.cursor)
-        self.window.reset_background()
-
-    def reset_board(self):
-        self.done_board = False
+    def flutter_update(self):
+        self.draw_self()
 
     def draw_self(self):
         self.window.draw_grid(self.anchor, self.block_size, self.state, self.pieces)
         self.window.draw_suface(self.anchor, (self.block_size[0]*self.cursor[0], self.block_size[1]*self.cursor[1]), self.cp)
-        self.done_board = True
-
-    def force_update(self):
-        self.draw_self()
-        self.window.update()
-        self.timer.sleep()
 
 
 class ScoreBoard(object):
@@ -108,14 +119,18 @@ class ScoreBoard(object):
         self.board = board
         self.pieces = ()
 
-        if pieces_path:
-            self.pieces = tuple([pygame.image.load(pp) for pp in pieces_path if pp])
+        if pieces_path: self.pieces = tuple([pygame.image.load(pp) for pp in pieces_path if pp])
+
         self.anchor = (self.window.height/10, self.window.width/10*2+board.block_size[1]*board.width)
         self.score = [0] * self.player_number
+        self.status_text = ''
 
     def update(self):
         self.score = map(str, self.board.count())
-        self.status_text = self.board.get_player_status_text()
+        next_status_text = self.board.get_player_status_text()
+        if self.status_text != next_status_text:
+            self.status_text = next_status_text
+            self.window.reset_background()
 
     def draw_self(self):
         # Drawing players' scores
@@ -137,6 +152,6 @@ class ScoreBoard(object):
 
         # Drawing players' status
         loc = [self.board.block_size[0]+self.window.height/100, 0]
-        font = pygame.font.Font(None, 40)
+        font = pygame.font.Font(None, 30)
         ren = font.render(self.status_text, True, (0,0,0))
         self.window.draw_suface(self.anchor, tuple(loc), ren)

@@ -11,6 +11,9 @@ class Rule(object):
         self._reset_feasible_locations(board)
 
     def _flip(self, board, loc):
+        pass
+
+    def _poll(self):
         self.current_player = (self.current_player+1) % self.player_number
 
     def _reset_feasible_locations(self, board):
@@ -19,16 +22,17 @@ class Rule(object):
     def has_feasible_location(self):
         return True if self.feasible_locations else False
 
-    def is_valid(self, loc=()):
+    def get_current_player(self):
+        return self.current_player
+
+    def validate_loc(self, loc=()):
         if not self.feasible_locations or not loc: return False
 
         return loc in self.feasible_locations
 
-    def get_current_player(self):
-        return self.current_player
-
     def shift(self, board=[], loc=()):
-        self._flip(board, loc)
+        if self.has_feasible_location(): self._flip(board, loc)
+        self._poll()
         self._reset_feasible_locations(board)
 
 
@@ -37,18 +41,17 @@ class Reversi(Rule):
     MOVE = ((-1,-1),(-1,0),(-1,1),(0,1),(1,1),(1,0),(1,-1),(0,-1))
 
     def _flip(self, board, loc):
-        if loc:
-            board[loc[0]][loc[1]] = self.current_player
-            for d in Reversi.MOVE:
-                if self._is_feasible(board, loc, d):
-                    tx, ty = loc[0]+d[0], loc[1]+d[1]
-                    while 0<=tx<len(board) and 0<=ty<len(board[0]):
-                        if board[tx][ty] == self.current_player: break
-                        board[tx][ty] ^= 1
-                        tx += d[0]
-                        ty += d[1]
+        if not loc: return
 
-        super(Reversi, self)._flip(board, loc)
+        board[loc[0]][loc[1]] = self.current_player
+        for d in Reversi.MOVE:
+            if self._is_feasible(board, loc, d):
+                tx, ty = loc[0]+d[0], loc[1]+d[1]
+                while 0<=tx<len(board) and 0<=ty<len(board[0]):
+                    if board[tx][ty] == self.current_player: break
+                    board[tx][ty] ^= 1
+                    tx += d[0]
+                    ty += d[1]
 
     def _reset_feasible_locations(self, board):
         super(Reversi, self)._reset_feasible_locations(board)
