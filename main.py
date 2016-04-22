@@ -14,11 +14,13 @@ def main():
     while True:
         if not keyboard.monitor(onkeydown_callback=board.update):
             window.quit()
-            break
+            exit(0)
 
         if board.is_locked():
             time.sleep(2)
             board.reset_lock()
+        if board.is_ending():
+            break
 
         board.action(callbacks=(scoreboard.update,))
         if not window.done_background:
@@ -26,6 +28,11 @@ def main():
             board.draw_self()
             scoreboard.draw_self()
         window.update()
+
+    while True:
+        if not keyboard.monitor():
+            window.quit()
+            exit(0)
 
 if __name__ == '__main__':
     main()
